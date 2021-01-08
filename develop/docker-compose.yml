@@ -1,0 +1,45 @@
+version: '3'
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../hosts:/etc/nginx/conf.d
+      - ../app:/var/www
+      - ../logs/nginx:/var/log/nginx
+    links:
+      - php
+  php:
+    build: ../images/php
+    links:
+      - mysql
+    volumes:
+      - ../app:/var/www
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=${MYSQL_HOST}
+    restart: always
+    depends_on:
+      - mysql
+  mysql:
+    image: mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - /etc/mysql:/etc/mysql
+      - ../logs/mysql:/var/log/mysql
+      - ../_db:/var/lib/mysql
+      - ../_db-files:/var/lib/mysql-files
+      - ../data:/docker-entrypoint-initdb.d
+    env_file:
+      - ".env"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_USER}
+      MYSQL_DATABASE: ${MYSQL_ROOT_PASSWORD}
